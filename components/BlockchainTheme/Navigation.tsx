@@ -91,12 +91,19 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
           <div className="absolute inset-0 bg-gradient-to-b from-black via-black to-black" />
           <div className="relative h-dvh w-full px-5 pt-4 pb-6 flex flex-col">
             <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false)
+                  scrollToSection('hero')
+                }}
+                className="flex items-center gap-3 text-left"
+                aria-label="Go to top"
+              >
                 <div className="w-9 h-9 rounded-2xl overflow-hidden bg-black/40 border border-white/10 shadow-lg shadow-purple-500/30">
                   <img src="/logo.jpg" alt="AI Shortcut Tools logo" className="w-full h-full object-cover" />
                 </div>
                 <div className="text-lg font-semibold text-white">AI Shortcut Tools</div>
-              </div>
+              </button>
               <button
                 onClick={() => setMobileMenuOpen(false)}
                 className="w-10 h-10 rounded-full bg-white/10 border border-white/20 text-white flex items-center justify-center hover:bg-white/20 transition-colors"
@@ -127,9 +134,13 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
     <nav data-app-nav className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-[95vw] max-w-6xl">
       <div className="flex items-center gap-2 sm:gap-3 bg-black/70 backdrop-blur rounded-2xl px-3 sm:px-4 py-3 border border-white/10 shadow-lg shadow-purple-500/10">
         <div className="min-w-0 flex-1 flex items-center gap-2 sm:gap-3 pr-2 sm:pr-4 border-r border-white/10 md:flex-none">
-          <div className="w-10 h-10 rounded-2xl overflow-hidden bg-black/40 border border-white/10 shadow-lg shadow-purple-500/30">
+          <button
+            onClick={() => scrollToSection('hero')}
+            className="w-10 h-10 rounded-2xl overflow-hidden bg-black/40 border border-white/10 shadow-lg shadow-purple-500/30"
+            aria-label="Go to top"
+          >
             <img src="/logo.jpg" alt="AI Shortcut Tools logo" className="w-full h-full object-cover" />
-          </div>
+          </button>
           <div className="min-w-0 leading-tight">
             <div className="text-sm font-semibold text-white truncate">AI Shortcut Tools</div>
             <div className="sm:hidden mt-1 flex flex-wrap items-center gap-1 pr-1">
