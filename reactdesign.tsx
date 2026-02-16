@@ -124,6 +124,21 @@ export function AIToolsSection({ aiTools, categories }: Props) {
     return () => window.removeEventListener('ai-tools:jump', handler as EventListener);
   }, []);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent).detail || {};
+      if (typeof detail.toolId !== 'number') return;
+      const tool = aiTools.find(item => item.id === detail.toolId);
+      if (tool) {
+        setSelectedTool(tool);
+      }
+    };
+
+    window.addEventListener('ai-tools:view', handler as EventListener);
+    return () => window.removeEventListener('ai-tools:view', handler as EventListener);
+  }, [aiTools]);
+
   const categoryIcons: Record<string, React.ElementType> = {
     "All": Sparkles,
     "AI for Everyday Tasks": MessageSquare,
