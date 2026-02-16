@@ -59,6 +59,15 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
     if (tool?.website) window.open(tool.website, '_blank', 'noopener,noreferrer')
   }
 
+  const openToolDetails = (toolId: number) => {
+    const tool = aiTools.find(item => item.id === toolId)
+    if (!tool) return
+    handleSearchChange(tool.name)
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('ai-tools:view', { detail: { toolId: tool.id, source: 'nav' } }))
+    }
+  }
+
   const handleSuggestionClick = (tool: (typeof aiTools)[number]) => {
     handleSearchChange(tool.name)
     if (typeof window !== 'undefined') {
@@ -253,7 +262,10 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
                             Open
                           </button>
                         )}
-                        <button className="text-xs text-gray-300 px-2 py-1 rounded-lg bg-white/5 border border-white/10">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); openToolDetails(tool.id) }}
+                          className="text-xs text-gray-300 px-2 py-1 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+                        >
                           View
                         </button>
                       </div>
@@ -345,7 +357,10 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
                         Open
                       </button>
                     )}
-                    <button className="text-xs text-gray-300 px-2 py-1 rounded-lg bg-white/5 border border-white/10">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); openToolDetails(tool.id) }}
+                      className="text-xs text-gray-300 px-2 py-1 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+                    >
                       View
                     </button>
                   </div>
