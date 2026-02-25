@@ -311,7 +311,7 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
 
                 {/* GitHub link */}
                 <a
-                  href="https://github.com"
+                  href="https://github.com/ayuda-chaos"
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setMobileMenuOpen(false)}
@@ -473,3 +473,4 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
     </nav>
   )
 }
+
