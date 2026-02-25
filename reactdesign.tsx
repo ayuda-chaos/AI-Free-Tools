@@ -31,9 +31,11 @@ interface Props {
 export function AIToolsSection({ aiTools, categories }: Props) {
   const sectionRef = useRef<HTMLElement>(null);
   const toolsSearchInputRef = useRef<HTMLInputElement | null>(null);
+  const toolsSearchContainerRef = useRef<HTMLDivElement | null>(null);
   const toolRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const [isVisible, setIsVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedTool, setSelectedTool] = useState<AITool | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -54,14 +56,30 @@ export function AIToolsSection({ aiTools, categories }: Props) {
   const prevCategoryRef = useRef(selectedCategory);
 
   const openToolSite = (tool: AITool) => {
+    setShowSearchSuggestions(false);
     if (tool.website) window.open(tool.website, '_blank', 'noopener,noreferrer');
   };
 
   const focusToolCard = (tool: AITool) => {
+    setShowSearchSuggestions(false);
     setSearchQuery(tool.name);
     setSelectedCategory('All');
     setPendingJumpId(tool.id);
   };
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (toolsSearchContainerRef.current?.contains(target)) return;
+      setShowSearchSuggestions(false);
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, []);
 
   useEffect(() => {
     const element = sectionRef.current;
@@ -719,14 +737,16 @@ export function AIToolsSection({ aiTools, categories }: Props) {
             <div className="flex flex-col gap-4">
               <div className="flex flex-col lg:flex-row gap-4 lg:items-start">
                 {/* Enhanced Search Bar */}
-                <div className="flex-1">
+                <div ref={toolsSearchContainerRef} className="flex-1">
                   <div className="relative">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-300" />
                     <input
                       type="text"
                       placeholder="Search AI tools by name or what they do..."
                       value={searchQuery}
+                      onFocus={() => setShowSearchSuggestions(true)}
                       onChange={(e) => {
+                        setShowSearchSuggestions(true);
                         setSearchQuery(e.target.value);
                         setSelectedCategory('All');
                       }}
@@ -744,7 +764,7 @@ export function AIToolsSection({ aiTools, categories }: Props) {
                     )}
                   </div>
 
-                  {searchQuery && (
+                  {searchQuery && showSearchSuggestions && (
                     <div className="mt-3 rounded-2xl bg-gradient-to-br from-slate-950/95 via-black/95 to-slate-900/95 border border-white/15 ring-1 ring-cyan-500/20 shadow-[0_20px_60px_rgba(14,165,233,0.35)] backdrop-blur-xl max-h-80 overflow-y-auto animate-fade-in">
                       {suggestions.length === 0 ? (
                         <div className="px-4 py-3 text-sm text-gray-400">No tools found.</div>
