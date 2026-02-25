@@ -28,6 +28,7 @@ const navItemIcons: Record<string, string> = {
 
 export function Navigation({ currentSection, scrollToSection }: { currentSection: string; scrollToSection: (id: string) => void }) {
   const [navSearch, setNavSearch] = useState('')
+  const [mobileMenuSearch, setMobileMenuSearch] = useState('')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [scrollProgress, setScrollProgress] = useState(0)
   const [desktopSearchOpen, setDesktopSearchOpen] = useState(false)
@@ -38,12 +39,15 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
   const mobileSearchContainerRef = useRef<HTMLDivElement>(null)
   const mobileTopSearchContainerRef = useRef<HTMLDivElement>(null)
 
-  const navSuggestions = useMemo(() => {
-    const query = navSearch.trim()
-    if (!query) return []
+  const getRankedSuggestions = (queryValue: string) => {
+    const query = queryValue.trim()
+    if (!query) return [] as (typeof aiTools)[number][]
     const alphabetical = [...aiTools].sort((a, b) => a.name.localeCompare(b.name))
     return rankToolsBySearch(alphabetical, query).slice(0, 8)
-  }, [navSearch])
+  }
+
+  const navSuggestions = useMemo(() => getRankedSuggestions(navSearch), [navSearch])
+  const mobileMenuSuggestions = useMemo(() => getRankedSuggestions(mobileMenuSearch), [mobileMenuSearch])
 
   const navItems: NavItem[] = [
     { label: 'AI Revolution', section: 'hero', highlight: true },
@@ -84,6 +88,10 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
     setNavSearch(value)
   }
 
+  const handleMobileMenuSearchChange = (value: string) => {
+    setMobileMenuSearch(value)
+  }
+
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Escape') {
       setDesktopSearchOpen(false)
@@ -93,6 +101,16 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
     }
     if (e.key === 'Enter' && navSuggestions.length > 0) {
       handleSuggestionClick(navSuggestions[0])
+    }
+  }
+
+  const handleMobileMenuSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Escape') {
+      setMobileSearchOpen(false)
+      return
+    }
+    if (e.key === 'Enter' && mobileMenuSuggestions.length > 0) {
+      handleMobileMenuSuggestionClick(mobileMenuSuggestions[0])
     }
   }
 
@@ -121,6 +139,15 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
     setDesktopSearchOpen(false)
     setMobileSearchOpen(false)
     setMobileTopSearchOpen(false)
+    setMobileMenuOpen(false)
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('ai-tools:jump', { detail: { toolId: tool.id, source: 'nav' } }))
+    }
+  }
+
+  const handleMobileMenuSuggestionClick = (tool: (typeof aiTools)[number]) => {
+    setMobileMenuSearch(tool.name)
+    setMobileSearchOpen(false)
     setMobileMenuOpen(false)
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('ai-tools:jump', { detail: { toolId: tool.id, source: 'nav' } }))
@@ -233,43 +260,44 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
                   className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain [touch-action:pan-y] [-webkit-overflow-scrolling:touch] px-4 py-4 sm:px-5"
                 >
                 {/* Search bar */}
-                <div ref={mobileSearchContainerRef} className="relative mb-5">
-                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-cyan-400">{'\u{1F50D}'}</span>
-                  <input
-                    ref={searchInputRef}
-                    value={navSearch}
-                    onFocus={() => setMobileSearchOpen(true)}
-                    onChange={(e) => {
-                      setMobileSearchOpen(true)
-                      handleSearchChange(e.target.value)
-                    }}
-                    onKeyDown={handleSearchKeyDown}
-                    placeholder="Search AI tools..."
-                    className="w-full pl-9 pr-14 py-2.5 rounded-xl bg-white/5 border border-cyan-500/20 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-cyan-400/60 focus:ring-2 focus:ring-cyan-500/20 backdrop-blur transition-all"
-                  />
-                  {navSearch && (
-                    <button
-                      onClick={() => handleSearchChange('')}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs px-2 py-1 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
+                <div ref={mobileSearchContainerRef} className="mb-5">
+                  <div className="relative">
+                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-cyan-400">{'\u{1F50D}'}</span>
+                    <input
+                      ref={searchInputRef}
+                      value={mobileMenuSearch}
+                      onFocus={() => setMobileSearchOpen(true)}
+                      onChange={(e) => {
+                        setMobileSearchOpen(true)
+                        handleMobileMenuSearchChange(e.target.value)
+                      }}
+                      onKeyDown={handleMobileMenuSearchKeyDown}
+                      placeholder="Search AI tools..."
+                      className="w-full pl-9 pr-14 py-2.5 rounded-xl bg-white/5 border border-cyan-500/20 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-cyan-400/60 focus:ring-2 focus:ring-cyan-500/20 backdrop-blur transition-all"
+                    />
+                    {mobileMenuSearch && (
+                      <button
+                        onClick={() => handleMobileMenuSearchChange('')}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs px-2 py-1 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
 
-                {/* Search suggestions */}
-                {navSearch && mobileSearchOpen && navSuggestions.length > 0 && (
-                  <div className="mb-5 rounded-xl glass-card max-h-64 overflow-y-auto overscroll-contain [touch-action:pan-y] [-webkit-overflow-scrolling:touch]">
-                    {navSuggestions.slice(0, 6).map(tool => (
+                  {/* Search suggestions */}
+                  {mobileMenuSearch && mobileSearchOpen && mobileMenuSuggestions.length > 0 && (
+                    <div className="mt-3 rounded-xl glass-card max-h-64 overflow-y-auto overscroll-contain [touch-action:pan-y] [-webkit-overflow-scrolling:touch]">
+                      {mobileMenuSuggestions.slice(0, 6).map(tool => (
                       <div
                         key={`mobile-menu-suggest-${tool.id}`}
                         role="button"
                         tabIndex={0}
-                        onClick={() => handleSuggestionClick(tool)}
+                        onClick={() => handleMobileMenuSuggestionClick(tool)}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault()
-                            handleSuggestionClick(tool)
+                            handleMobileMenuSuggestionClick(tool)
                           }
                         }}
                         className="w-full text-left px-3 py-2.5 border-b border-white/5 last:border-0 hover:bg-cyan-500/5 active:bg-cyan-500/10 transition-colors"
@@ -302,8 +330,11 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation()
-                              setMobileMenuOpen(false)
-                              openToolDetails(tool.id)
+                              const mobileTool = aiTools.find(item => item.id === tool.id)
+                              setMobileSearchOpen(false)
+                              if (mobileTool && typeof window !== 'undefined') {
+                                window.dispatchEvent(new CustomEvent('ai-tools:view', { detail: { toolId: mobileTool.id, source: 'nav' } }))
+                              }
                             }}
                             className="text-[11px] text-gray-300 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
                           >
@@ -311,17 +342,18 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
                           </button>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  )}
 
-                {/* No results */}
-                {navSearch && mobileSearchOpen && navSuggestions.length === 0 && (
-                  <div className="mb-5 py-4 text-center text-sm text-gray-500">No tools found for "{navSearch}"</div>
-                )}
+                  {/* No results */}
+                  {mobileMenuSearch && mobileSearchOpen && mobileMenuSuggestions.length === 0 && (
+                    <div className="mt-3 py-4 text-center text-sm text-gray-500">No tools found for "{mobileMenuSearch}"</div>
+                  )}
+                </div>
 
                 {/* Navigation items */}
-                {!navSearch && (
+                {(!mobileMenuSearch || !mobileSearchOpen) && (
                   <>
                     <div className="mb-3">
                       <div className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2 px-1">Navigate</div>
@@ -380,7 +412,7 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
 
                 {/* GitHub link */}
                 <a
-                  href="https://github.com/ayuda-chaos"
+                  href="https://github.com"
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setMobileMenuOpen(false)}
@@ -660,4 +692,3 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
     </nav>
   )
 }
-
