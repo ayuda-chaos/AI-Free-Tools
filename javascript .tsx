@@ -135,14 +135,23 @@ function App() {
       if (rafId !== null) return;
       rafId = window.requestAnimationFrame(() => {
         rafId = null;
-        const sections = ['hero', 'manifesto', 'tools', 'guide', 'apis', 'opensource', 'resources', 'community'];
+        const sections = [
+          { id: 'hero', navSection: 'hero' },
+          { id: 'tools', navSection: 'tools' },
+          { id: 'manifesto', navSection: 'manifesto' },
+          { id: 'guide', navSection: 'guide' },
+          { id: 'apis', navSection: 'apis' },
+          { id: 'opensource', navSection: 'opensource' },
+          { id: 'resources', navSection: 'community' },
+          { id: 'community', navSection: 'community' }
+        ];
         const scrollPosition = window.scrollY + 200;
 
         for (let i = sections.length - 1; i >= 0; i--) {
-          const section = document.getElementById(sections[i]);
+          const section = document.getElementById(sections[i].id);
           const sectionTop = section ? section.getBoundingClientRect().top + window.scrollY : null;
           if (sectionTop !== null && sectionTop <= scrollPosition) {
-            setCurrentSection(sections[i]);
+            setCurrentSection(sections[i].navSection);
             break;
           }
         }
