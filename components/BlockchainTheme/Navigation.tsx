@@ -29,7 +29,6 @@ const navItemIcons: Record<string, string> = {
 export function Navigation({ currentSection, scrollToSection }: { currentSection: string; scrollToSection: (id: string) => void }) {
   const [navSearch, setNavSearch] = useState('')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [scrollProgress, setScrollProgress] = useState(0)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   const navSuggestions = useMemo(() => {
@@ -48,19 +47,6 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
     { label: 'Open Source Models', section: 'opensource', highlight: true },
     { label: 'Resources & Community', section: 'community', highlight: true }
   ]
-
-  // Scroll progress tracking
-  useEffect(() => {
-    const updateProgress = () => {
-      const scrollTop = window.scrollY
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight
-      const progress = docHeight > 0 ? Math.min((scrollTop / docHeight) * 100, 100) : 0
-      setScrollProgress(progress)
-    }
-    window.addEventListener('scroll', updateProgress, { passive: true })
-    updateProgress()
-    return () => window.removeEventListener('scroll', updateProgress)
-  }, [])
 
   const handleClick = (item: NavItem) => {
     if (item.filters && typeof window !== 'undefined') {
@@ -204,21 +190,58 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
 
                 {/* Search suggestions */}
                 {navSearch && navSuggestions.length > 0 && (
-                  <div className="mb-5 rounded-xl glass-card max-h-48 overflow-y-auto overscroll-contain [touch-action:pan-y] [-webkit-overflow-scrolling:touch]">
+                  <div className="mb-5 rounded-xl glass-card max-h-64 overflow-y-auto overscroll-contain [touch-action:pan-y] [-webkit-overflow-scrolling:touch]">
                     {navSuggestions.slice(0, 6).map(tool => (
-                      <button
+                      <div
                         key={`mobile-menu-suggest-${tool.id}`}
+                        role="button"
+                        tabIndex={0}
                         onClick={() => handleSuggestionClick(tool)}
-                        className="w-full text-left flex items-center gap-3 px-3 py-2.5 border-b border-white/5 last:border-0 hover:bg-cyan-500/5 active:bg-cyan-500/10 transition-colors"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            handleSuggestionClick(tool)
+                          }
+                        }}
+                        className="w-full text-left px-3 py-2.5 border-b border-white/5 last:border-0 hover:bg-cyan-500/5 active:bg-cyan-500/10 transition-colors"
                       >
-                        <div className="min-w-0 flex-1">
-                          <div className="text-sm font-semibold text-white truncate">{tool.name}</div>
-                          <div className="text-xs text-gray-500 truncate">{tool.category}</div>
+                        <div className="flex items-start gap-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-semibold text-white truncate">{tool.name}</div>
+                            <div className="text-xs text-gray-500 truncate">{tool.category}</div>
+                          </div>
+                          <svg className="mt-1 w-4 h-4 text-cyan-500/50 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                          </svg>
                         </div>
-                        <svg className="w-4 h-4 text-cyan-500/50 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
+
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          {tool.website && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setMobileMenuOpen(false)
+                                openToolSite(tool.id)
+                              }}
+                              className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-cyan-500/15 text-cyan-200 border border-cyan-500/30 hover:bg-cyan-500/25 transition-colors"
+                            >
+                              Visit
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setMobileMenuOpen(false)
+                              openToolDetails(tool.id)
+                            }}
+                            className="text-[11px] text-gray-300 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+                          >
+                            View
+                          </button>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -310,17 +333,6 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
   return (
     <nav data-app-nav className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-[95vw] max-w-6xl">
       <div className="relative flex items-center gap-2 sm:gap-3 bg-black/60 backdrop-blur-xl rounded-2xl px-3 sm:px-4 py-3 border border-white/10 shadow-lg shadow-purple-500/10 animate-border-glow">
-        {/* Scroll Progress Bar */}
-        <div
-          className="scroll-progress"
-          style={{ width: `${scrollProgress}%` }}
-          role="progressbar"
-          aria-valuenow={Math.round(scrollProgress)}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label="Page scroll progress"
-        />
-
         <div className="min-w-0 flex-1 flex items-center gap-2 sm:gap-3 pr-2 sm:pr-4 border-r border-white/10 md:flex-none">
           <button
             onClick={() => scrollToSection('hero')}
@@ -438,7 +450,7 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
                             onClick={(e) => { e.stopPropagation(); openToolSite(tool.id) }}
                             className="px-3 py-1.5 rounded-lg text-xs font-medium bg-cyan-500/15 text-cyan-200 border border-cyan-500/30 hover:bg-cyan-500/25 transition-colors"
                           >
-                            Open
+                            Visit
                           </button>
                         )}
                         <button
