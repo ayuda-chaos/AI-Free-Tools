@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { aiTools } from '../../data/aiToolsWithWeb3'
 import { rankToolsBySearch } from './searchUtils'
@@ -19,8 +19,6 @@ type NavItem = {
 export function Navigation({ currentSection, scrollToSection }: { currentSection: string; scrollToSection: (id: string) => void }) {
   const [navSearch, setNavSearch] = useState('')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [scrollProgress, setScrollProgress] = useState(0)
-
   const navSuggestions = useMemo(() => {
     const query = navSearch.trim()
     if (!query) return []
@@ -37,19 +35,6 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
     { label: 'Open Source Models', section: 'opensource', highlight: true },
     { label: 'Resources & Community', section: 'community', highlight: true }
   ]
-
-  // Scroll progress tracking
-  useEffect(() => {
-    const updateProgress = () => {
-      const scrollTop = window.scrollY
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight
-      const progress = docHeight > 0 ? Math.min((scrollTop / docHeight) * 100, 100) : 0
-      setScrollProgress(progress)
-    }
-    window.addEventListener('scroll', updateProgress, { passive: true })
-    updateProgress()
-    return () => window.removeEventListener('scroll', updateProgress)
-  }, [])
 
   const handleClick = (item: NavItem) => {
     if (item.filters && typeof window !== 'undefined') {
@@ -98,12 +83,6 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
     }
   }, [mobileMenuOpen])
 
-  // Dispatch custom event for main content shift
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    window.dispatchEvent(new CustomEvent('menu-toggle', { detail: { open: mobileMenuOpen } }))
-  }, [mobileMenuOpen])
-
   const badges = [
     { label: 'Privacy', icon: '\u{1F512}' },
     { label: 'Blockchain', icon: '\u26D3' },
@@ -115,157 +94,61 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
     { label: 'No Ads', icon: '\u{1F6AB}' }
   ]
 
-  // Half-screen menu portal
-  const mobileMenu = typeof document !== 'undefined'
+  const mobileMenu = mobileMenuOpen && typeof document !== 'undefined'
     ? createPortal(
-        <>
-          {/* Overlay backdrop */}
-          <div
-            className={`half-menu-overlay ${mobileMenuOpen ? 'active' : ''} md:hidden`}
-            onClick={() => setMobileMenuOpen(false)}
-          />
-          {/* Half-screen panel */}
-          <div className={`half-menu-panel ${mobileMenuOpen ? 'active' : ''} md:hidden`}>
-            <div className="px-5 pt-5 pb-6 flex flex-col">
-              {/* Header */}
-              <div className="flex items-center justify-between mb-5">
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false)
-                    scrollToSection('hero')
-                  }}
-                  className="flex items-center gap-2.5 text-left"
-                  aria-label="Go to top"
-                >
-                  <div className="w-8 h-8 rounded-xl overflow-hidden bg-black/40 border border-cyan-500/20 shadow-lg shadow-cyan-500/20">
-                    <img src="/logo.jpg" alt="AI Shortcut Tools logo" width="64" height="64" className="w-full h-full object-cover" />
-                  </div>
-                  <div className="text-base font-semibold bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent">AI Shortcut Tools</div>
-                </button>
-                <button
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="w-9 h-9 rounded-full glass-card flex items-center justify-center text-cyan-300 hover:text-white transition-colors animate-border-glow"
-                  aria-label="Close menu"
-                >
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                    <path d="M1 1l12 12M13 1L1 13" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Search bar */}
-              <div className="relative mb-4">
-                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-cyan-400">{'\u{1F50D}'}</span>
-                <input
-                  value={navSearch}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  onKeyDown={handleSearchKeyDown}
-                  placeholder="Search AI tools..."
-                  className="w-full pl-9 pr-14 py-2.5 rounded-xl bg-white/5 border border-cyan-500/20 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-cyan-400/60 focus:ring-2 focus:ring-cyan-500/20 backdrop-blur transition-all"
-                />
-                {navSearch && (
-                  <button
-                    onClick={() => handleSearchChange('')}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs px-2 py-1 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-
-              {/* Search suggestions */}
-              {navSearch && navSuggestions.length > 0 && (
-                <div
-                  data-lenis-prevent
-                  data-lenis-prevent-touch
-                  className="mb-3 rounded-xl glass-card max-h-36 overflow-y-auto overscroll-contain [touch-action:pan-y] [-webkit-overflow-scrolling:touch]"
-                >
-                  {navSuggestions.slice(0, 5).map(tool => (
-                    <button
-                      key={`mobile-menu-suggest-${tool.id}`}
-                      onClick={() => { handleSuggestionClick(tool); setMobileMenuOpen(false); }}
-                      className="w-full text-left flex items-center gap-3 px-3 py-2.5 border-b border-white/5 last:border-0 hover:bg-cyan-500/5 transition-colors"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm font-semibold text-white truncate">{tool.name}</div>
-                        <div className="text-xs text-gray-500 truncate">{tool.category}</div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {/* Stats */}
-              <div className="flex items-center justify-center gap-3 mb-4 py-2 rounded-xl glass-card">
-                <span className="text-xs text-cyan-300 font-medium">200+ AI Tools</span>
-                <span className="w-1 h-1 rounded-full bg-purple-400" />
-                <span className="text-xs text-purple-300 font-medium">100% Free/Open</span>
-              </div>
-
-              {/* Nav items */}
-              <div className="space-y-2">
-                {navItems.map(item => {
-                  const isActive = item.highlight && currentSection === item.section
-                  return (
-                    <button
-                      key={`mobile-full-${item.section}-${item.label}`}
-                      onClick={() => handleClick(item)}
-                      className={`w-full text-left text-sm font-semibold px-4 py-3 rounded-xl transition-all duration-200 ${
-                        isActive
-                          ? 'glass-card bg-gradient-to-r from-cyan-500/10 to-purple-500/10 text-white border-cyan-400/30 shadow-[0_0_15px_rgba(6,182,212,0.15)]'
-                          : 'text-gray-300 bg-white/[0.02] border border-white/5 hover:bg-white/5 hover:border-cyan-500/20 hover:text-white'
-                      }`}
-                    >
-                      <span className="flex items-center gap-2">
-                        {isActive && <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(6,182,212,0.8)]" />}
-                        {item.label}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
-
-              {/* GitHub */}
-              <a
-                href="https://github.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setMobileMenuOpen(false)}
-                className="mt-3 flex items-center justify-center gap-2 w-full py-2.5 rounded-xl glass-card text-gray-400 hover:text-cyan-300 transition-colors text-xs font-medium"
+        <div className="fixed inset-0 z-[100] md:hidden bg-black/98">
+          <div className="absolute inset-0 bg-gradient-to-b from-black via-black to-black" />
+          <div className="relative h-dvh w-full px-5 pt-4 pb-6 flex flex-col">
+            <div className="flex items-center justify-between mb-6">
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false)
+                  scrollToSection('hero')
+                }}
+                className="flex items-center gap-3 text-left"
+                aria-label="Go to top"
               >
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
-                </svg>
-                View on GitHub
-              </a>
+                <div className="w-9 h-9 rounded-2xl overflow-hidden bg-black/40 border border-white/10 shadow-lg shadow-purple-500/30">
+                  <img src="/logo.jpg" alt="AI Shortcut Tools logo" className="w-full h-full object-cover" />
+                </div>
+                <div className="text-lg font-semibold text-white">AI Shortcut Tools</div>
+              </button>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-10 h-10 rounded-full bg-white/10 border border-white/20 text-white flex items-center justify-center hover:bg-white/20 transition-colors"
+                aria-label="Close menu"
+              >
+                X
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 content-start">
+              {navItems.map(item => (
+                <button
+                  key={`mobile-full-${item.section}-${item.label}`}
+                  onClick={() => handleClick(item)}
+                  className="w-full text-left text-base sm:text-lg font-semibold text-white px-3 py-3 rounded-2xl bg-white/10 border border-white/15 hover:bg-white/20 transition-colors"
+                >
+                  {item.label}
+                </button>
+              ))}
             </div>
           </div>
-        </>,
+        </div>,
         document.body
       )
     : null
 
   return (
     <nav data-app-nav className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-[95vw] max-w-6xl">
-      <div className="relative flex items-center gap-2 sm:gap-3 bg-black/60 backdrop-blur-xl rounded-2xl px-3 sm:px-4 py-3 border border-white/10 shadow-lg shadow-purple-500/10 animate-border-glow">
-        {/* Scroll Progress Bar */}
-        <div
-          className="scroll-progress"
-          style={{ width: `${scrollProgress}%` }}
-          role="progressbar"
-          aria-valuenow={Math.round(scrollProgress)}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label="Page scroll progress"
-        />
-
+      <div className="flex items-center gap-2 sm:gap-3 bg-black/70 backdrop-blur rounded-2xl px-3 sm:px-4 py-3 border border-white/10 shadow-lg shadow-purple-500/10">
         <div className="min-w-0 flex-1 flex items-center gap-2 sm:gap-3 pr-2 sm:pr-4 border-r border-white/10 md:flex-none">
           <button
             onClick={() => scrollToSection('hero')}
-            className="w-10 h-10 rounded-2xl overflow-hidden bg-black/40 border border-cyan-500/20 shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 transition-shadow"
+            className="w-10 h-10 rounded-2xl overflow-hidden bg-black/40 border border-white/10 shadow-lg shadow-purple-500/30"
             aria-label="Go to top"
           >
-            <img src="/logo.jpg" alt="AI Shortcut Tools logo" width="64" height="64" className="w-full h-full object-cover" />
+            <img src="/logo.jpg" alt="AI Shortcut Tools logo" className="w-full h-full object-cover" />
           </button>
           <div className="min-w-0 leading-tight">
             <div className="text-sm font-semibold text-white truncate">AI Shortcut Tools</div>
@@ -273,7 +156,7 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
               {mobileTrustBadges.map(badge => (
                 <span
                   key={`mobile-badge-${badge.label}`}
-                  className="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-cyan-500/15 bg-cyan-500/5 px-1.5 py-0.5 text-[10px] text-cyan-100"
+                  className="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-white/20 bg-white/5 px-1.5 py-0.5 text-[10px] text-cyan-100"
                 >
                   <span className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full bg-gradient-to-br from-purple-500/70 to-cyan-500/70 text-[8px] text-white">
                     {badge.icon}
@@ -304,8 +187,8 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
                 onClick={() => handleClick(item)}
                 className={`px-2.5 py-1.5 text-xs md:text-sm rounded-full transition-all duration-200 ${
                   isActive
-                    ? 'bg-gradient-to-r from-cyan-600/30 via-purple-600/30 to-pink-600/30 text-white border border-cyan-400/40 shadow-md shadow-cyan-500/20 scale-105'
-                    : 'bg-white/5 text-gray-300 hover:text-white hover:bg-white/10 border border-white/5 hover:border-cyan-500/20'
+                    ? 'bg-gradient-to-r from-purple-600/30 to-cyan-600/30 text-white border border-purple-400/40 shadow-md shadow-cyan-500/20 scale-105'
+                    : 'bg-white/5 text-gray-300 hover:text-white hover:bg-white/10 border border-white/5'
                 }`}
               >
                 {item.label}
@@ -315,15 +198,15 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
         </div>
         <button
           onClick={() => setMobileMenuOpen((open) => !open)}
-          className="md:hidden ml-auto shrink-0 h-10 rounded-full bg-gradient-to-r from-cyan-500/15 to-purple-500/15 border border-cyan-500/20 text-white flex items-center gap-2 pl-2.5 pr-3 shadow-md shadow-cyan-500/10 hover:from-cyan-500/25 hover:to-purple-500/25 transition-all"
+          className="md:hidden ml-auto shrink-0 h-10 rounded-full bg-gradient-to-r from-white/15 to-white/5 border border-white/20 text-white flex items-center gap-2 pl-2.5 pr-3 shadow-md shadow-cyan-500/10 hover:from-white/20 hover:to-white/10 transition-all"
           aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={mobileMenuOpen}
         >
-          <span className="-translate-x-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-cyan-200">Menu</span>
+          <span className="-translate-x-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-cyan-100">Menu</span>
           <span className="flex h-4 w-5 flex-col justify-between" aria-hidden>
-            <span className={`h-[2px] w-full rounded-full bg-cyan-300 transition-all duration-200 ${mobileMenuOpen ? 'translate-y-[6px] rotate-45' : ''}`} />
-            <span className={`h-[2px] w-full rounded-full bg-cyan-300 transition-all duration-200 ${mobileMenuOpen ? 'opacity-0' : 'opacity-100'}`} />
-            <span className={`h-[2px] w-full rounded-full bg-cyan-300 transition-all duration-200 ${mobileMenuOpen ? '-translate-y-[6px] -rotate-45' : ''}`} />
+            <span className={`h-[2px] w-full rounded-full bg-cyan-50 transition-all duration-200 ${mobileMenuOpen ? 'translate-y-[6px] rotate-45' : ''}`} />
+            <span className={`h-[2px] w-full rounded-full bg-cyan-50 transition-all duration-200 ${mobileMenuOpen ? 'opacity-0' : 'opacity-100'}`} />
+            <span className={`h-[2px] w-full rounded-full bg-cyan-50 transition-all duration-200 ${mobileMenuOpen ? '-translate-y-[6px] -rotate-45' : ''}`} />
           </span>
         </button>
         <div className="hidden md:flex items-center gap-2 min-w-[260px] max-w-[320px] pl-2">
@@ -334,7 +217,7 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
               onChange={(e) => handleSearchChange(e.target.value)}
               onKeyDown={handleSearchKeyDown}
               placeholder="Search tools fast"
-              className="w-full px-3 py-2 rounded-xl bg-white/5 border border-cyan-500/20 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-cyan-400/60 focus:ring-2 focus:ring-cyan-500/20 shadow-[0_0_12px_rgba(6,182,212,0.1)] transition-all"
+              className="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/15 text-white text-sm placeholder-gray-400 focus:outline-none focus:border-cyan-400/60 focus:ring-2 focus:ring-cyan-500/30 shadow-[0_0_12px_rgba(34,211,238,0.15)]"
             />
             {navSearch && (
               <button
@@ -346,14 +229,14 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
             )}
 
             {navSearch && (
-              <div className="absolute left-0 right-0 mt-3 rounded-2xl glass-card bg-black/90 shadow-2xl shadow-cyan-500/15 backdrop-blur-xl max-h-80 overflow-y-auto z-50 animate-fade-in">
+              <div className="absolute left-0 right-0 mt-3 rounded-2xl bg-gradient-to-br from-slate-950/95 via-black/95 to-slate-900/95 border border-white/15 shadow-2xl shadow-cyan-500/20 backdrop-blur-xl max-h-80 overflow-y-auto z-50 animate-fade-in">
                 <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10">
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-[11px] font-bold text-white shadow-md shadow-cyan-500/30">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-[11px] font-bold text-white shadow-md shadow-purple-500/30">
                     AI
                   </div>
                   <div>
                     <div className="text-sm font-semibold text-white">AI Shortcut Tools</div>
-                    <div className="text-xs text-gray-500">Search results</div>
+                    <div className="text-xs text-gray-400">Search results</div>
                   </div>
                 </div>
                 {navSuggestions.length === 0 ? (
@@ -362,7 +245,7 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
                   navSuggestions.map(tool => (
                     <div
                       key={`nav-suggest-${tool.id}`}
-                      className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/5 last:border-0 hover:bg-cyan-500/5 cursor-pointer transition-colors"
+                      className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/5 last:border-0 hover:bg-white/5 cursor-pointer"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => handleSuggestionClick(tool)}
                     >
@@ -395,8 +278,8 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
         </div>
       </div>
 
-      {/* Mobile quick nav options */}
-      <div className="mt-2 md:hidden bg-black/60 backdrop-blur-xl rounded-2xl px-3 py-2 border border-white/10 shadow-lg shadow-purple-500/10">
+      {/* Mobile quick nav options (visible before opening hamburger menu) */}
+      <div className="mt-2 md:hidden bg-black/70 backdrop-blur rounded-2xl px-3 py-2 border border-white/10 shadow-lg shadow-purple-500/10">
         <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {navItems.map(item => {
             const isActive = item.highlight && currentSection === item.section
@@ -404,10 +287,10 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
               <button
                 key={`mobile-quick-${item.section}-${item.label}`}
                 onClick={() => handleClick(item)}
-                className={`flex-shrink-0 whitespace-nowrap px-3 py-2 text-xs rounded-full border transition-all duration-200 ${
+                className={`flex-shrink-0 whitespace-nowrap px-3 py-2 text-xs rounded-full border transition-colors ${
                   isActive
-                    ? 'bg-gradient-to-r from-cyan-600/30 to-purple-600/30 text-white border-cyan-400/40 shadow-[0_0_10px_rgba(6,182,212,0.15)]'
-                    : 'bg-white/5 text-gray-200 border-white/10 hover:bg-white/10 hover:border-cyan-500/20'
+                    ? 'bg-gradient-to-r from-purple-600/35 to-cyan-600/35 text-white border-cyan-400/45'
+                    : 'bg-white/5 text-gray-200 border-white/10 hover:bg-white/10'
                 }`}
               >
                 {item.label}
@@ -418,7 +301,7 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
       </div>
 
       {/* Mobile quick search bar */}
-      <div className="mt-2 md:hidden bg-black/60 backdrop-blur-xl rounded-2xl px-3 py-2 border border-white/10 shadow-lg shadow-purple-500/10 relative">
+      <div className="mt-2 md:hidden bg-black/70 backdrop-blur rounded-2xl px-3 py-2 border border-white/10 shadow-lg shadow-purple-500/10 relative">
         <div className="relative">
           <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-base leading-none">{'\u{1F50D}'}</span>
           <div className="relative">
@@ -427,7 +310,7 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
               onChange={(e) => handleSearchChange(e.target.value)}
               onKeyDown={handleSearchKeyDown}
               placeholder="Search AI tools instantly"
-              className="w-full pl-9 pr-16 py-2 rounded-xl bg-white/5 border border-cyan-500/20 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-cyan-400/60 focus:ring-2 focus:ring-cyan-500/20 shadow-[0_0_12px_rgba(6,182,212,0.1)] transition-all"
+              className="w-full pl-9 pr-16 py-2 rounded-xl bg-white/10 border border-white/15 text-white text-sm placeholder-gray-400 focus:outline-none focus:border-cyan-400/60 focus:ring-2 focus:ring-cyan-500/30 shadow-[0_0_12px_rgba(34,211,238,0.15)]"
             />
             {navSearch && (
               <button
@@ -441,9 +324,9 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
         </div>
 
         {navSearch && (
-          <div className="absolute left-0 right-0 mt-3 rounded-2xl glass-card bg-black/90 shadow-2xl shadow-cyan-500/15 backdrop-blur-xl max-h-72 overflow-y-auto z-50 animate-fade-in">
+          <div className="absolute left-0 right-0 mt-3 rounded-2xl bg-gradient-to-br from-slate-950/95 via-black/95 to-slate-900/95 border border-white/15 shadow-2xl shadow-cyan-500/20 backdrop-blur-xl max-h-72 overflow-y-auto z-50 animate-fade-in">
             <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-[11px] font-bold text-white shadow-md shadow-cyan-500/30">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-[11px] font-bold text-white shadow-md shadow-purple-500/30">
                 AI
               </div>
               <div>
@@ -457,7 +340,7 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
               navSuggestions.map(tool => (
                 <div
                   key={`nav-mobile-${tool.id}`}
-                  className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/5 last:border-0 hover:bg-cyan-500/5 cursor-pointer transition-colors"
+                  className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/5 last:border-0 hover:bg-white/5 cursor-pointer"
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => handleSuggestionClick(tool)}
                 >
@@ -492,3 +375,6 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
     </nav>
   )
 }
+
+
+
