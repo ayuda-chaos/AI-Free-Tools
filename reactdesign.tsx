@@ -1143,7 +1143,7 @@ export function AIToolsSection({ aiTools, categories }: Props) {
 
       {/* Tool Detail Dialog with Blockchain Theme */}
       {selectedTool && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-50 flex min-h-dvh items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
+        <div className="fixed inset-0 z-[90] flex min-h-dvh items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
           <div className="relative max-w-lg w-full max-h-[90vh] overflow-y-auto rounded-2xl bg-gradient-to-br from-black to-gray-900 border border-purple-500/30 mx-auto my-auto">
             <div className="p-6">
               {/* Header */}
