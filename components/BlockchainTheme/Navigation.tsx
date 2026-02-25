@@ -29,7 +29,14 @@ const navItemIcons: Record<string, string> = {
 export function Navigation({ currentSection, scrollToSection }: { currentSection: string; scrollToSection: (id: string) => void }) {
   const [navSearch, setNavSearch] = useState('')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [scrollProgress, setScrollProgress] = useState(0)
+  const [desktopSearchOpen, setDesktopSearchOpen] = useState(false)
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
+  const [mobileTopSearchOpen, setMobileTopSearchOpen] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const desktopSearchContainerRef = useRef<HTMLDivElement>(null)
+  const mobileSearchContainerRef = useRef<HTMLDivElement>(null)
+  const mobileTopSearchContainerRef = useRef<HTMLDivElement>(null)
 
   const navSuggestions = useMemo(() => {
     const query = navSearch.trim()
@@ -48,7 +55,24 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
     { label: 'Resources & Community', section: 'community', highlight: true }
   ]
 
+  // Scroll progress tracking (top nav line)
+  useEffect(() => {
+    const updateProgress = () => {
+      const scrollTop = window.scrollY
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight
+      const progress = docHeight > 0 ? Math.min((scrollTop / docHeight) * 100, 100) : 0
+      setScrollProgress(progress)
+    }
+
+    window.addEventListener('scroll', updateProgress, { passive: true })
+    updateProgress()
+    return () => window.removeEventListener('scroll', updateProgress)
+  }, [])
+
   const handleClick = (item: NavItem) => {
+    setDesktopSearchOpen(false)
+    setMobileSearchOpen(false)
+    setMobileTopSearchOpen(false)
     if (item.filters && typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('ai-tools:filters', { detail: item.filters }))
     }
@@ -61,6 +85,12 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
   }
 
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Escape') {
+      setDesktopSearchOpen(false)
+      setMobileSearchOpen(false)
+      setMobileTopSearchOpen(false)
+      return
+    }
     if (e.key === 'Enter' && navSuggestions.length > 0) {
       handleSuggestionClick(navSuggestions[0])
     }
@@ -68,12 +98,18 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
 
   const openToolSite = (toolId: number) => {
     const tool = aiTools.find(item => item.id === toolId)
+    setDesktopSearchOpen(false)
+    setMobileSearchOpen(false)
+    setMobileTopSearchOpen(false)
     if (tool?.website) window.open(tool.website, '_blank', 'noopener,noreferrer')
   }
 
   const openToolDetails = (toolId: number) => {
     const tool = aiTools.find(item => item.id === toolId)
     if (!tool) return
+    setDesktopSearchOpen(false)
+    setMobileSearchOpen(false)
+    setMobileTopSearchOpen(false)
     handleSearchChange(tool.name)
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('ai-tools:view', { detail: { toolId: tool.id, source: 'nav' } }))
@@ -82,6 +118,9 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
 
   const handleSuggestionClick = (tool: (typeof aiTools)[number]) => {
     handleSearchChange(tool.name)
+    setDesktopSearchOpen(false)
+    setMobileSearchOpen(false)
+    setMobileTopSearchOpen(false)
     setMobileMenuOpen(false)
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('ai-tools:jump', { detail: { toolId: tool.id, source: 'nav' } }))
@@ -91,6 +130,11 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
   useEffect(() => {
     if (typeof document === 'undefined') return
     document.body.style.overflow = mobileMenuOpen ? 'hidden' : ''
+    if (mobileMenuOpen) {
+      setMobileTopSearchOpen(false)
+    } else {
+      setMobileSearchOpen(false)
+    }
     return () => {
       document.body.style.overflow = ''
     }
@@ -108,6 +152,27 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
       setTimeout(() => searchInputRef.current?.focus(), 400)
     }
   }, [mobileMenuOpen])
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null
+      if (!target) return
+
+      const clickedDesktopSearch = desktopSearchContainerRef.current?.contains(target) ?? false
+      const clickedMobileSearch = mobileSearchContainerRef.current?.contains(target) ?? false
+      const clickedMobileTopSearch = mobileTopSearchContainerRef.current?.contains(target) ?? false
+      if (clickedDesktopSearch || clickedMobileSearch || clickedMobileTopSearch) return
+
+      setDesktopSearchOpen(false)
+      setMobileSearchOpen(false)
+      setMobileTopSearchOpen(false)
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+    return () => document.removeEventListener('pointerdown', handlePointerDown)
+  }, [])
 
   const badges = [
     { label: 'Privacy', icon: '\u{1F512}' },
@@ -168,12 +233,16 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
                   className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain [touch-action:pan-y] [-webkit-overflow-scrolling:touch] px-4 py-4 sm:px-5"
                 >
                 {/* Search bar */}
-                <div className="relative mb-5">
+                <div ref={mobileSearchContainerRef} className="relative mb-5">
                   <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-cyan-400">{'\u{1F50D}'}</span>
                   <input
                     ref={searchInputRef}
                     value={navSearch}
-                    onChange={(e) => handleSearchChange(e.target.value)}
+                    onFocus={() => setMobileSearchOpen(true)}
+                    onChange={(e) => {
+                      setMobileSearchOpen(true)
+                      handleSearchChange(e.target.value)
+                    }}
                     onKeyDown={handleSearchKeyDown}
                     placeholder="Search AI tools..."
                     className="w-full pl-9 pr-14 py-2.5 rounded-xl bg-white/5 border border-cyan-500/20 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-cyan-400/60 focus:ring-2 focus:ring-cyan-500/20 backdrop-blur transition-all"
@@ -189,7 +258,7 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
                 </div>
 
                 {/* Search suggestions */}
-                {navSearch && navSuggestions.length > 0 && (
+                {navSearch && mobileSearchOpen && navSuggestions.length > 0 && (
                   <div className="mb-5 rounded-xl glass-card max-h-64 overflow-y-auto overscroll-contain [touch-action:pan-y] [-webkit-overflow-scrolling:touch]">
                     {navSuggestions.slice(0, 6).map(tool => (
                       <div
@@ -247,7 +316,7 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
                 )}
 
                 {/* No results */}
-                {navSearch && navSuggestions.length === 0 && (
+                {navSearch && mobileSearchOpen && navSuggestions.length === 0 && (
                   <div className="mb-5 py-4 text-center text-sm text-gray-500">No tools found for "{navSearch}"</div>
                 )}
 
@@ -311,7 +380,7 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
 
                 {/* GitHub link */}
                 <a
-                  href="https://github.com/ayuda-chaos"
+                  href="https://github.com"
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setMobileMenuOpen(false)}
@@ -332,7 +401,17 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
 
   return (
     <nav data-app-nav className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-[95vw] max-w-6xl">
-      <div className="relative flex items-center gap-2 sm:gap-3 bg-black/60 backdrop-blur-xl rounded-2xl px-3 sm:px-4 py-3 border border-white/10 shadow-lg shadow-purple-500/10 animate-border-glow">
+      <div className="relative flex items-center gap-2 sm:gap-3 bg-black/60 backdrop-blur-xl rounded-2xl px-3 sm:px-4 py-3 border border-white/10 shadow-lg shadow-purple-500/10">
+        <div
+          className="scroll-progress"
+          style={{ width: `${scrollProgress}%` }}
+          role="progressbar"
+          aria-valuenow={Math.round(scrollProgress)}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="Page scroll progress"
+        />
+
         <div className="min-w-0 flex-1 flex items-center gap-2 sm:gap-3 pr-2 sm:pr-4 border-r border-white/10 md:flex-none">
           <button
             onClick={() => scrollToSection('hero')}
@@ -402,10 +481,14 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
         </button>
         <div className="hidden md:flex items-center gap-2 min-w-[260px] max-w-[320px] pl-2">
           <span className="text-lg">{'\u{1F50D}'}</span>
-          <div className="relative flex-1">
+          <div ref={desktopSearchContainerRef} className="relative flex-1">
             <input
               value={navSearch}
-              onChange={(e) => handleSearchChange(e.target.value)}
+              onFocus={() => setDesktopSearchOpen(true)}
+              onChange={(e) => {
+                setDesktopSearchOpen(true)
+                handleSearchChange(e.target.value)
+              }}
               onKeyDown={handleSearchKeyDown}
               placeholder="Search tools fast"
               className="w-full px-3 py-2 rounded-xl bg-white/5 border border-cyan-500/20 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-cyan-400/60 focus:ring-2 focus:ring-cyan-500/20 shadow-[0_0_12px_rgba(6,182,212,0.1)] transition-all"
@@ -419,7 +502,7 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
               </button>
             )}
 
-            {navSearch && (
+            {navSearch && desktopSearchOpen && (
               <div className="absolute left-0 right-0 mt-3 rounded-2xl glass-card bg-black/90 shadow-2xl shadow-cyan-500/15 backdrop-blur-xl max-h-80 overflow-y-auto z-50 animate-fade-in">
                 <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10">
                   <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-[11px] font-bold text-white shadow-md shadow-cyan-500/30">
@@ -469,8 +552,111 @@ export function Navigation({ currentSection, scrollToSection }: { currentSection
         </div>
       </div>
 
+      <div className="md:hidden mt-2 px-1">
+        <div ref={mobileTopSearchContainerRef} className="relative rounded-2xl border border-white/10 bg-black/50 backdrop-blur-xl shadow-lg shadow-cyan-500/5 p-2">
+          <div className="relative">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-cyan-300">{'\u{1F50D}'}</span>
+            <input
+              value={navSearch}
+              onFocus={() => setMobileTopSearchOpen(true)}
+              onChange={(e) => {
+                setMobileTopSearchOpen(true)
+                handleSearchChange(e.target.value)
+              }}
+              onKeyDown={handleSearchKeyDown}
+              placeholder="Search tools fast"
+              className="w-full pl-9 pr-14 py-2.5 rounded-xl bg-white/5 border border-cyan-500/20 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-cyan-400/60 focus:ring-2 focus:ring-cyan-500/20 shadow-[0_0_12px_rgba(6,182,212,0.1)] transition-all"
+            />
+            {navSearch && (
+              <button
+                onClick={() => handleSearchChange('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-300 text-xs px-2 py-1 rounded-lg bg-white/10 border border-white/15 hover:bg-white/20 transition-colors"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          {navSearch && mobileTopSearchOpen && (
+            <div className="absolute left-2 right-2 top-full mt-2 rounded-2xl glass-card bg-black/90 shadow-2xl shadow-cyan-500/15 backdrop-blur-xl max-h-80 overflow-y-auto z-50 animate-fade-in">
+              <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-[11px] font-bold text-white shadow-md shadow-cyan-500/30">
+                  AI
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-white">AI Shortcut Tools</div>
+                  <div className="text-xs text-gray-500">Search results</div>
+                </div>
+              </div>
+              {navSuggestions.length === 0 ? (
+                <div className="px-4 py-3 text-sm text-gray-400">No tools found.</div>
+              ) : (
+                navSuggestions.map(tool => (
+                  <div
+                    key={`mobile-top-nav-suggest-${tool.id}`}
+                    className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/5 last:border-0 hover:bg-cyan-500/5 cursor-pointer transition-colors"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => handleSuggestionClick(tool)}
+                  >
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold text-white truncate">{tool.name}</div>
+                      <div className="text-xs text-gray-400 truncate">{tool.category}</div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {tool.website && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); openToolSite(tool.id) }}
+                          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-cyan-500/15 text-cyan-200 border border-cyan-500/30 hover:bg-cyan-500/25 transition-colors"
+                        >
+                          Visit
+                        </button>
+                      )}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); openToolDetails(tool.id) }}
+                        className="text-xs text-gray-300 px-2 py-1 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+                      >
+                        View
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="md:hidden mt-2 px-1">
+        <div className="rounded-2xl border border-white/10 bg-black/50 backdrop-blur-xl shadow-lg shadow-cyan-500/5">
+          <div
+            className="no-scrollbar flex items-center gap-2 overflow-x-auto px-2 py-2"
+            role="tablist"
+            aria-label="Quick section navigation"
+          >
+            {navItems.map((item) => {
+              const isActive = item.highlight && currentSection === item.section
+              return (
+                <button
+                  key={`mobile-top-${item.section}-${item.label}`}
+                  onClick={() => handleClick(item)}
+                  role="tab"
+                  aria-selected={isActive}
+                  className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-[11px] font-medium border transition-all ${
+                    isActive
+                      ? 'bg-gradient-to-r from-cyan-600/25 to-purple-600/25 text-white border-cyan-400/35 shadow-md shadow-cyan-500/15'
+                      : 'bg-white/5 text-gray-200 border-white/10 active:bg-white/10'
+                  }`}
+                >
+                  <span className="text-xs" aria-hidden>{navItemIcons[item.section] || '\u2728'}</span>
+                  <span className="whitespace-nowrap">{item.label}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+
       {mobileMenu}
     </nav>
   )
 }
-
