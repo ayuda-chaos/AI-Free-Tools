@@ -652,9 +652,9 @@ export function AIToolsSection({ aiTools, categories }: Props) {
       <div
         className="tool-badge flex items-center gap-1.5 rounded-md"
         style={{
-          background: `${accent}26`,
-          border: `1px solid ${accent}80`,
-          color: accent,
+          background: `${accent}33`,
+          border: `1px solid ${accent}a6`,
+          color: '#f8fafc',
         }}
       >
         <span
@@ -669,17 +669,17 @@ export function AIToolsSection({ aiTools, categories }: Props) {
       <div className="flex items-center gap-2 flex-wrap">
         {themePill}
         {tool.openSource && (
-          <div className="tool-badge flex items-center gap-1.5 rounded-md" style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.5)', color: '#10b981' }}>
+          <div className="tool-badge flex items-center gap-1.5 rounded-md" style={{ background: 'rgba(16,185,129,0.28)', border: '1px solid rgba(16,185,129,0.65)', color: '#f8fafc' }}>
             <CodeBracketsIcon className="w-3.5 h-3.5" /> Open Source
           </div>
         )}
         {tool.free && (
-          <div className="tool-badge flex items-center gap-1.5 rounded-md" style={{ background: 'rgba(6,182,212,0.15)', border: '1px solid rgba(6,182,212,0.5)', color: '#06b6d4' }}>
+          <div className="tool-badge flex items-center gap-1.5 rounded-md" style={{ background: 'rgba(6,182,212,0.28)', border: '1px solid rgba(6,182,212,0.65)', color: '#f8fafc' }}>
             <SparkleIcon className="w-3.5 h-3.5" /> Free
           </div>
         )}
         {tool.privacy && (
-          <div className="tool-badge flex items-center gap-1.5 rounded-md" style={{ background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.5)', color: '#8b5cf6' }}>
+          <div className="tool-badge flex items-center gap-1.5 rounded-md" style={{ background: 'rgba(139,92,246,0.28)', border: '1px solid rgba(139,92,246,0.65)', color: '#f8fafc' }}>
             <ShieldIcon className="w-3.5 h-3.5" /> Privacy
           </div>
         )}
@@ -774,20 +774,20 @@ export function AIToolsSection({ aiTools, categories }: Props) {
                 padding: '8px 16px',
                 fontSize: 13,
                 fontWeight: 600,
-                background: `${accent}33`,
-                border: `1px solid ${accent}99`,
-                color: accent,
+                background: `${accent}4d`,
+                border: `1px solid ${accent}cc`,
+                color: '#f8fafc',
                 borderRadius: 8,
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = `${accent}e6`;
-                e.currentTarget.style.color = '#000';
+                e.currentTarget.style.background = `${accent}cc`;
+                e.currentTarget.style.color = '#020617';
                 e.currentTarget.style.borderColor = accent;
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = `${accent}33`;
-                e.currentTarget.style.color = accent;
-                e.currentTarget.style.borderColor = `${accent}99`;
+                e.currentTarget.style.background = `${accent}4d`;
+                e.currentTarget.style.color = '#f8fafc';
+                e.currentTarget.style.borderColor = `${accent}cc`;
               }}
             >
               Visit <ArrowRightIcon className="w-3.5 h-3.5" />
@@ -844,9 +844,9 @@ export function AIToolsSection({ aiTools, categories }: Props) {
                 fontSize: 14,
                 fontWeight: 600,
                 marginTop: 12,
-                background: `${accent}33`,
-                border: `1px solid ${accent}99`,
-                color: accent,
+                background: `${accent}4d`,
+                border: `1px solid ${accent}cc`,
+                color: '#f8fafc',
                 borderRadius: 8,
               }}
             >
@@ -1098,18 +1098,26 @@ export function AIToolsSection({ aiTools, categories }: Props) {
                 {/* View Mode Toggle */}
                 <div className="flex items-center gap-2 self-start">
                   <button
+                    type="button"
+                    aria-label="Switch to grid view"
+                    aria-pressed={viewMode === 'grid'}
+                    title="Grid view"
                     onClick={() => setViewMode('grid')}
                     className={`p-3 rounded-xl transition-all border ${viewMode === 'grid' ? 'bg-gradient-to-r from-purple-600/30 to-cyan-600/30 text-white border-purple-400/40 shadow-md shadow-cyan-500/20' : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 border-white/10'}`}
                   >
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                       <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                     </svg>
                   </button>
                   <button
+                    type="button"
+                    aria-label="Switch to list view"
+                    aria-pressed={viewMode === 'list'}
+                    title="List view"
                     onClick={() => setViewMode('list')}
                     className={`p-3 rounded-xl transition-all border ${viewMode === 'list' ? 'bg-gradient-to-r from-purple-600/30 to-cyan-600/30 text-white border-purple-400/40 shadow-md shadow-cyan-500/20' : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 border-white/10'}`}
                   >
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                       <path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 8a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 12a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 16a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" />
                     </svg>
                   </button>
@@ -1275,7 +1283,12 @@ export function AIToolsSection({ aiTools, categories }: Props) {
 
                 {/* Sort & Stats */}
                 <div className="flex items-center gap-4 self-start">
+                  <label htmlFor="tool-sort-select" className="sr-only">
+                    Sort tools
+                  </label>
                   <select
+                    id="tool-sort-select"
+                    name="tool-sort-select"
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as 'popular' | 'newest' | 'name')}
                     className="px-3 py-2 rounded-lg bg-gradient-to-r from-slate-900 via-black to-slate-900 border border-white/10 text-white text-sm focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/30 backdrop-blur-sm transition-all duration-200 hover:border-cyan-300 hover:shadow-lg hover:shadow-cyan-500/15"
