@@ -23,7 +23,7 @@ export function ToolLogo({ handle, name, websiteUrl, size = 56, colorClass, clas
       <div
         className={`rounded-xl flex items-center justify-center flex-shrink-0 bg-white/10 ${className}`}
         style={box}
-        aria-label={`${name} logo`}
+        aria-hidden="true"
       >
         <div
           style={{
@@ -52,12 +52,11 @@ export function ToolLogo({ handle, name, websiteUrl, size = 56, colorClass, clas
           background: `linear-gradient(135deg, ${color}25, ${color}10)`,
           border: `1px solid ${color}35`,
         }}
-        aria-label={`${name} logo`}
+        aria-hidden="true"
       >
         <span
           style={{ fontSize: Math.round(size * 0.46), lineHeight: 1 }}
-          role="img"
-          aria-hidden
+          aria-hidden="true"
         >
           {emoji}
         </span>
@@ -83,7 +82,7 @@ export function ToolLogo({ handle, name, websiteUrl, size = 56, colorClass, clas
     <div
       className={`rounded-xl flex items-center justify-center flex-shrink-0 ${colorClass ? `bg-gradient-to-br ${colorClass}` : ''} ${className}`}
       style={{ ...box, ...(bg ? { background: bg } : {}) }}
-      aria-label={`${name} logo`}
+      aria-hidden="true"
     >
       <span
         className="text-white font-bold select-none"
