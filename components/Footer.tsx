@@ -229,7 +229,7 @@ export function Footer({ scrollToSection }: { scrollToSection: (id: string) => v
               <p className="text-xs text-gray-400">Share your thoughts, suggestions, or report bugs.</p>
               {feedbackStatus === 'ok' ? (
                 <div className="text-center py-4 space-y-3">
-                  <div className="text-emerald-400 font-semibold text-base">Thank You for your contribution!</div>
+                  <div className="text-emerald-400 font-semibold text-base">Thank You for your feedback!</div>
                   <p className="text-sm text-gray-300">
                     If you want to personally contact, email me here:
                   </p>
